@@ -10,8 +10,8 @@
   <main class="app">
     <header class="top">
       <div>
-        <h1>🐞 Bug Hunt</h1>
-        <p class="subtitle">Clique nos bugs o mais rápido possível. 30s. Bora?</p>
+        <h1>Bug Hunt</h1>
+        <p class="subtitle">Clique nos alvos antes que sumam. 30s por partida.</p>
       </div>
 
       <div class="stats">
@@ -21,22 +21,20 @@
       </div>
     </header>
 
-    <section class="board" id="board" aria-label="Área do jogo"></section>
+    <section class="board" id="board" aria-label="Área do jogo">
+      <div class="overlay" id="overlay">
+        <div class="overlay-card">
+          <div class="overlay-title">Bug Hunt</div>
+          <div class="overlay-text">Start para iniciar. Dificuldade aumenta a velocidade.</div>
+        </div>
+      </div>
+    </section>
 
     <footer class="actions">
-      <button id="startBtn">▶️ Começar</button>
-      <button id="restartBtn" class="ghost" disabled>🔁 Reiniciar</button>
-      <button id="hardBtn" class="ghost">🔥 Modo Hard</button>
-      <span class="tip">Dica: no modo hard os bugs somem mais rápido.</span>
+      <button id="startBtn" class="btn primary">Start</button>
+      <button id="hardBtn" class="btn">Hard: Off</button>
+      <span class="tip">Clique rápido. O recorde fica salvo no seu navegador.</span>
     </footer>
-
-    <section class="card">
-      <h2>Sobre</h2>
-      <p>
-        Joguinho simples feito em HTML/CSS/JS e hospedado no GitHub Pages.
-        Se você curtiu, manda um ⭐ no repositório 😄
-      </p>
-    </section>
   </main>
 
   <script src="script.js"></script>
