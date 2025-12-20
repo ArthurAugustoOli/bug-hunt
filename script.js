@@ -1,167 +1,119 @@
-const board = document.getElementById("board");
-const overlay = document.getElementById("overlay");
+const field = document.getElementById("field");
 const timeEl = document.getElementById("time");
 const scoreEl = document.getElementById("score");
-const bestEl = document.getElementById("best");
-const startBtn = document.getElementById("startBtn");
-const hardBtn = document.getElementById("hardBtn");
+const startBtn = document.getElementById("start");
+const message = document.getElementById("message");
 
+const INSECTS = ["🐜", "🕷", "🐞", "🦗", "🦟"];
+
+let time = 30;
 let score = 0;
-let timeLeft = 30;
-let timer = null;
-let spawner = null;
-let playing = false;
-let hardMode = false;
+let gameRunning = false;
 
-const BEST_KEY = "bughunt_best_v2";
+let timers = [];
 
-/**
- * “Bugs” sem emoji:
- * - usamos glifos curtos (monospace) que parecem símbolos de erro/bug
- */
-const GLYPHS = ["ERR", "BUG", "404", "!", "X", ";;", "{ }", "</>", "NaN", "NULL"];
-
-function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
-function loadBest(){
-  const v = Number(localStorage.getItem(BEST_KEY) || 0);
-  bestEl.textContent = String(v);
-  return v;
-}
-function setBest(v){
-  localStorage.setItem(BEST_KEY, String(v));
-  bestEl.textContent = String(v);
-}
-
-function resetRound(){
-  // reinicia tudo automaticamente
+function resetGame() {
+  field.innerHTML = "";
+  time = 30;
   score = 0;
-  timeLeft = 30;
-  scoreEl.textContent = "0";
-  timeEl.textContent = "30";
-  board.querySelectorAll(".target").forEach(el => el.remove());
+  timeEl.textContent = time;
+  scoreEl.textContent = score;
+  message.textContent = "Boa sorte!";
+  timers.forEach(t => clearInterval(t));
+  timers = [];
 }
 
-function randomPos(){
-  const rect = board.getBoundingClientRect();
-  const x = clamp(Math.random() * rect.width, 50, rect.width - 50);
-  const y = clamp(Math.random() * rect.height, 50, rect.height - 50);
-  return {x, y};
-}
+function endGame() {
+  gameRunning = false;
+  timers.forEach(t => clearInterval(t));
+  timers = [];
 
-function randomGlyph(){
-  return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-}
-
-function randomTint(){
-  // deixa o visual variado sem ficar carnaval
-  const hues = [210, 230, 250, 270, 190];
-  const h = hues[Math.floor(Math.random() * hues.length)];
-  return `hsla(${h}, 95%, 70%, .18)`;
-}
-
-function spawnTarget(){
-  if(!playing) return;
-
-  const target = document.createElement("div");
-  target.className = "target";
-
-  // leve variação visual
-  target.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,.24), ${randomTint()})`;
-
-  const g = document.createElement("div");
-  g.className = "glyph";
-  g.textContent = randomGlyph();
-  target.appendChild(g);
-
-  const {x, y} = randomPos();
-  target.style.left = `${x}px`;
-  target.style.top = `${y}px`;
-
-  let removed = false;
-
-  const ttl = hardMode ? 520 : 900; // tempo na tela
-  const die = setTimeout(() => {
-    if(removed) return;
-    removed = true;
-    target.remove();
-  }, ttl);
-
-  target.addEventListener("click", () => {
-    if(removed) return;
-    removed = true;
-    clearTimeout(die);
-
-    target.classList.add("hit");
-
-    // pontuação
-    score += hardMode ? 2 : 1;
-    scoreEl.textContent = String(score);
-
-    setTimeout(() => target.remove(), 70);
-  });
-
-  board.appendChild(target);
-}
-
-function start(){
-  // se já estiver jogando, não faz nada
-  if(playing) return;
-
-  // reseta AUTOMATICAMENTE ao apertar Start
-  resetRound();
-
-  playing = true;
-  overlay.classList.add("hidden");
-  startBtn.disabled = true;
-
-  // timers
-  timer = setInterval(() => {
-    timeLeft -= 1;
-    timeEl.textContent = String(timeLeft);
-    if(timeLeft <= 0) finish();
-  }, 1000);
-
-  const spawnEvery = hardMode ? 360 : 560;
-  spawner = setInterval(spawnTarget, spawnEvery);
-  spawnTarget();
-}
-
-function finish(){
-  playing = false;
-  clearInterval(timer);
-  clearInterval(spawner);
-  timer = null;
-  spawner = null;
+  message.innerHTML = `
+    <strong>Fim de jogo!</strong><br>
+    Sua pontuação final foi <strong>${score}</strong>
+  `;
 
   startBtn.disabled = false;
-  overlay.classList.remove("hidden");
-
-  const best = loadBest();
-  if(score > best) setBest(score);
-
-  // mensagem discreta (sem emoji)
-  overlay.querySelector(".overlay-title").textContent = "Partida finalizada";
-  overlay.querySelector(".overlay-text").textContent =
-    `Pontuação: ${score} • Recorde: ${Math.max(best, score)} • Clique em Start para jogar novamente.`;
 }
 
-function toggleHard(){
-  hardMode = !hardMode;
-  hardBtn.textContent = hardMode ? "Hard: On" : "Hard: Off";
+function spawnRandomInsect() {
+  if (!gameRunning) return;
 
-  // se mudar no meio, reinicia a partida automaticamente de forma limpa
-  if(playing){
-    clearInterval(timer);
-    clearInterval(spawner);
-    playing = false;
-    startBtn.disabled = false;
-    start();
-  }
+  const insect = document.createElement("div");
+  insect.className = "insect";
+  insect.textContent = INSECTS[Math.floor(Math.random() * INSECTS.length)];
+
+  insect.style.left = Math.random() * (field.clientWidth - 30) + "px";
+  insect.style.top = Math.random() * (field.clientHeight - 30) + "px";
+
+  insect.onclick = () => {
+    score++;
+    scoreEl.textContent = score;
+    insect.remove();
+  };
+
+  field.appendChild(insect);
+
+  setTimeout(() => insect.remove(), 1200);
 }
 
-startBtn.addEventListener("click", start);
-hardBtn.addEventListener("click", toggleHard);
+function spawnMovingInsect() {
+  if (!gameRunning) return;
 
-loadBest();
-resetRound();
+  const insect = document.createElement("div");
+  insect.className = "insect";
+  insect.textContent = INSECTS[Math.floor(Math.random() * INSECTS.length)];
+
+  let x = -30;
+  const y = Math.random() * (field.clientHeight - 30);
+
+  insect.style.top = y + "px";
+
+  insect.onclick = () => {
+    score++;
+    scoreEl.textContent = score;
+    insect.remove();
+  };
+
+  field.appendChild(insect);
+
+  const move = setInterval(() => {
+    if (!gameRunning) {
+      clearInterval(move);
+      insect.remove();
+      return;
+    }
+
+    x += 3;
+    insect.style.left = x + "px";
+
+    if (x > field.clientWidth) {
+      clearInterval(move);
+      insect.remove();
+    }
+  }, 30);
+
+  timers.push(move);
+}
+
+function startGame() {
+  resetGame();
+  gameRunning = true;
+  startBtn.disabled = true;
+
+  const countdown = setInterval(() => {
+    time--;
+    timeEl.textContent = time;
+    if (time <= 0) {
+      clearInterval(countdown);
+      endGame();
+    }
+  }, 1000);
+
+  timers.push(countdown);
+
+  timers.push(setInterval(spawnRandomInsect, 700));
+  timers.push(setInterval(spawnMovingInsect, 1200));
+}
+
+startBtn.onclick = startGame;
